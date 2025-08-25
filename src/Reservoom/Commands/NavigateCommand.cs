@@ -1,4 +1,5 @@
-﻿using Reservoom.Services;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Reservoom.Services;
 using Reservoom.Stores;
 using Reservoom.ViewModels;
 using System;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Reservoom.Commands
 {
-    public class NavigateCommand<TViewModel> : CommandBase where TViewModel : ViewModelBase
+    public class NavigateCommand<TViewModel> : CommandBase where TViewModel : ObservableObject
     {
         private readonly NavigationService<TViewModel> _navigationService;
 

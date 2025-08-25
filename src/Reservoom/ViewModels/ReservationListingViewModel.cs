@@ -1,4 +1,5 @@
-﻿using Reservoom.Commands;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Reservoom.Commands;
 using Reservoom.Models;
 using Reservoom.Services;
 using Reservoom.Stores;
@@ -13,7 +14,7 @@ using System.Windows.Input;
 
 namespace Reservoom.ViewModels
 {
-    public class ReservationListingViewModel : ViewModelBase
+    public partial class ReservationListingViewModel : ObservableObject
     {
         private readonly HotelStore _hotelStore;
 
@@ -23,37 +24,14 @@ namespace Reservoom.ViewModels
 
         public bool HasReservations => _reservations.Any();
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasErrorMessage))]
         private string _errorMessage;
-        public string ErrorMessage
-        {
-            get
-            {
-                return _errorMessage;
-            }
-            set
-            {
-                _errorMessage = value;
-                OnPropertyChanged(nameof(ErrorMessage));
-
-                OnPropertyChanged(nameof(HasErrorMessage));
-            }
-        }
 
         public bool HasErrorMessage => !string.IsNullOrEmpty(ErrorMessage);
 
+        [ObservableProperty]
         private bool _isLoading;
-        public bool IsLoading
-        {
-            get
-            {
-                return _isLoading;
-            }
-            set
-            {
-                _isLoading = value;
-                OnPropertyChanged(nameof(IsLoading));
-            }
-        }
 
         public ICommand LoadReservationsCommand { get; }
         public ICommand MakeReservationCommand { get; }
@@ -70,10 +48,10 @@ namespace Reservoom.ViewModels
             _reservations.CollectionChanged += OnReservationsChanged;
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
             _hotelStore.ReservationMade -= OnReservationMode;
-            base.Dispose();
+            //base.Dispose();
         }
 
         private void OnReservationMode(Reservation reservation)

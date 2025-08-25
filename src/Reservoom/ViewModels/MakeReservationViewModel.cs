@@ -1,4 +1,5 @@
-﻿using Reservoom.Commands;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using Reservoom.Commands;
 using Reservoom.Models;
 using Reservoom.Services;
 using Reservoom.Stores;
@@ -13,113 +14,66 @@ using System.Windows.Input;
 
 namespace Reservoom.ViewModels
 {
-    public class MakeReservationViewModel : ViewModelBase, INotifyDataErrorInfo
+    public partial class MakeReservationViewModel : ObservableObject, INotifyDataErrorInfo
     {
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
         private string _username;
-        public string Username
+
+        partial void OnUsernameChanging(string value)
         {
-            get
+            ClearErrors(nameof(Username));
+
+            if (string.IsNullOrEmpty(value))
             {
-                return _username;
-            }
-            set
-            {
-                _username = value;
-                OnPropertyChanged(nameof(Username));
-
-                ClearErrors(nameof(Username));
-
-                if(!HasUsername)
-                {
-                    AddError("Username cannot be empty.", nameof(Username));
-                }
-
-                OnPropertyChanged(nameof(CanCreateReservation));
+                AddError("Username cannot be empty.", nameof(Username));
             }
         }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
         private int _floorNumber = 1;
-        public int FloorNumber
+
+        partial void OnFloorNumberChanging(int value)
         {
-            get
+            ClearErrors(nameof(FloorNumber));
+
+            if (value > 0)
             {
-                return _floorNumber;
-            }
-            set
-            {
-                _floorNumber = value;
-                OnPropertyChanged(nameof(FloorNumber));
-
-                ClearErrors(nameof(FloorNumber));
-
-                if (!HasFloorNumberGreaterThanZero)
-                {
-                    AddError("Floor number must be greater than zero.", nameof(FloorNumber));
-                }
-
-                OnPropertyChanged(nameof(CanCreateReservation));
+                AddError("Floor number must be greater than zero.", nameof(FloorNumber));
             }
         }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
         private int _roomNumber;
-        public int RoomNumber
-        {
-            get
-            {
-                return _roomNumber;
-            }
-            set
-            {
-                _roomNumber = value;
-                OnPropertyChanged(nameof(RoomNumber));
-            }
-        }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
         private DateTime _startDate = new DateTime(2021, 1, 1);
-        public DateTime StartDate
+
+        partial void OnStartDateChanging(DateTime value)
         {
-            get
-            {
-                return _startDate;
-            }
-            set
-            {
-                _startDate = value;
-                OnPropertyChanged(nameof(StartDate));
+            ClearErrors(nameof(StartDate));
+            ClearErrors(nameof(EndDate));
 
-                ClearErrors(nameof(StartDate));
-                ClearErrors(nameof(EndDate));
-
-                if (!HasStartDateBeforeEndDate)
-                {
-                    AddError("The start date cannot be after the end date.", nameof(StartDate));
-                }
-                
-                OnPropertyChanged(nameof(CanCreateReservation));
+            if (!(value < EndDate))
+            {
+                AddError("The start date cannot be after the end date.", nameof(StartDate));
             }
         }
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
         private DateTime _endDate = new DateTime(2021, 1, 8);
-        public DateTime EndDate
+        partial void OnEndDateChanging(DateTime value)
         {
-            get
+            ClearErrors(nameof(StartDate));
+            ClearErrors(nameof(EndDate));
+
+            if (!(StartDate < value))
             {
-                return _endDate;
-            }
-            set
-            {
-                _endDate = value;
-                OnPropertyChanged(nameof(EndDate));
-
-                ClearErrors(nameof(StartDate));
-                ClearErrors(nameof(EndDate));
-
-                if (!HasStartDateBeforeEndDate)
-                {
-                    AddError("The end date cannot be before the start date.", nameof(EndDate));
-                }
-
-                OnPropertyChanged(nameof(CanCreateReservation));
+                AddError("The end date cannot be before the start date.", nameof(EndDate));
             }
         }
 
