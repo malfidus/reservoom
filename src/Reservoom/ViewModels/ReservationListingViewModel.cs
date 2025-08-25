@@ -1,5 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Reservoom.Commands;
+using CommunityToolkit.Mvvm.Input;
 using Reservoom.Models;
 using Reservoom.Services;
 using Reservoom.Stores;
@@ -17,7 +17,7 @@ namespace Reservoom.ViewModels
     public partial class ReservationListingViewModel : ObservableObject
     {
         private readonly HotelStore _hotelStore;
-
+        private readonly NavigationService<MakeReservationViewModel> _makeReservationNavigationService;
         private readonly ObservableCollection<ReservationViewModel> _reservations;
 
         public IEnumerable<ReservationViewModel> Reservations => _reservations;
@@ -33,16 +33,37 @@ namespace Reservoom.ViewModels
         [ObservableProperty]
         private bool _isLoading;
 
-        public ICommand LoadReservationsCommand { get; }
-        public ICommand MakeReservationCommand { get; }
+        [RelayCommand]
+        private void MakeReservation()
+        {
+            _makeReservationNavigationService.Navigate();
+        }
+
+        [RelayCommand]
+        private async Task LoadReservations()
+        {
+            ErrorMessage = string.Empty;
+            IsLoading = true;
+
+            try
+            {
+                await _hotelStore.Load();
+
+                UpdateReservations(_hotelStore.Reservations);
+            }
+            catch (Exception)
+            {
+                ErrorMessage = "Failed to load reservations.";
+            }
+
+            IsLoading = false;
+        }
 
         public ReservationListingViewModel(HotelStore hotelStore, NavigationService<MakeReservationViewModel> makeReservationNavigationService)
         {
             _hotelStore = hotelStore;
+            _makeReservationNavigationService = makeReservationNavigationService;
             _reservations = new ObservableCollection<ReservationViewModel>();
-
-            LoadReservationsCommand = new LoadReservationsCommand(this, hotelStore);
-            MakeReservationCommand = new NavigateCommand<MakeReservationViewModel>(makeReservationNavigationService);
 
             _hotelStore.ReservationMade += OnReservationMode;
             _reservations.CollectionChanged += OnReservationsChanged;

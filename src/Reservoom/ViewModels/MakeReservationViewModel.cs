@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using Reservoom.Commands;
+using CommunityToolkit.Mvvm.Input;
+using Reservoom.Exceptions;
 using Reservoom.Models;
 using Reservoom.Services;
 using Reservoom.Stores;
@@ -10,6 +11,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Reservoom.ViewModels
@@ -18,6 +20,7 @@ namespace Reservoom.ViewModels
     {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
+        [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
         private string _username;
 
         partial void OnUsernameChanging(string value)
@@ -32,6 +35,7 @@ namespace Reservoom.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
+        [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
         private int _floorNumber = 1;
 
         partial void OnFloorNumberChanging(int value)
@@ -50,6 +54,7 @@ namespace Reservoom.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
+        [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
         private DateTime _startDate = new DateTime(2021, 1, 1);
 
         partial void OnStartDateChanging(DateTime value)
@@ -65,6 +70,7 @@ namespace Reservoom.ViewModels
 
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCreateReservation))]
+        [NotifyCanExecuteChangedFor(nameof(SubmitCommand))]
         private DateTime _endDate = new DateTime(2021, 1, 8);
         partial void OnEndDateChanging(DateTime value)
         {
@@ -87,42 +93,61 @@ namespace Reservoom.ViewModels
         private bool HasFloorNumberGreaterThanZero => FloorNumber > 0;
         private bool HasStartDateBeforeEndDate => StartDate < EndDate;
 
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasSubmitErrorMessage))]
         private string _submitErrorMessage;
-        public string SubmitErrorMessage
-        {
-            get
-            {
-                return _submitErrorMessage;
-            }
-            set
-            {
-                _submitErrorMessage = value;
-                OnPropertyChanged(nameof(SubmitErrorMessage));
-
-                OnPropertyChanged(nameof(HasSubmitErrorMessage));
-            }
-        }
 
         public bool HasSubmitErrorMessage => !string.IsNullOrEmpty(SubmitErrorMessage);
 
+        [ObservableProperty]
         private bool _isSubmitting;
-        public bool IsSubmitting
+
+        [RelayCommand(CanExecute = nameof(CanCreateReservation))]
+        private async Task Submit()
         {
-            get
+            SubmitErrorMessage = string.Empty;
+            IsSubmitting = true;
+
+            Reservation reservation = new Reservation(
+                new RoomID(FloorNumber, RoomNumber),
+                Username,
+                StartDate,
+                EndDate);
+
+            try
             {
-                return _isSubmitting;
+                await _hotelStore.MakeReservation(reservation);
+
+                MessageBox.Show("Successfully reserved room.", "Success",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+
+                _reservationViewNavigationService.Navigate();
             }
-            set
+            catch (ReservationConflictException)
             {
-                _isSubmitting = value;
-                OnPropertyChanged(nameof(IsSubmitting));
+                SubmitErrorMessage = "This room is already taken on those dates.";
             }
+            catch (InvalidReservationTimeRangeException)
+            {
+                SubmitErrorMessage = "Start date must be before end date.";
+            }
+            catch (Exception)
+            {
+                SubmitErrorMessage = "Failed to make reservation.";
+            }
+
+            IsSubmitting = false;
         }
 
-        public ICommand SubmitCommand { get; }
-        public ICommand CancelCommand { get; }
+        [RelayCommand]
+        private void Cancel()
+        {
+            _reservationViewNavigationService.Navigate();
+        }
 
         private readonly Dictionary<string, List<string>> _propertyNameToErrorsDictionary;
+        private readonly HotelStore _hotelStore;
+        private readonly NavigationService<ReservationListingViewModel> _reservationViewNavigationService;
 
         public bool HasErrors => _propertyNameToErrorsDictionary.Any();
 
@@ -130,10 +155,9 @@ namespace Reservoom.ViewModels
 
         public MakeReservationViewModel(HotelStore hotelStore, NavigationService<ReservationListingViewModel> reservationViewNavigationService)
         {
-            SubmitCommand = new MakeReservationCommand(this, hotelStore, reservationViewNavigationService);
-            CancelCommand = new NavigateCommand<ReservationListingViewModel>(reservationViewNavigationService);
-
             _propertyNameToErrorsDictionary = new Dictionary<string, List<string>>();
+            _hotelStore = hotelStore;
+            _reservationViewNavigationService = reservationViewNavigationService;
         }
 
         public IEnumerable GetErrors(string propertyName)
