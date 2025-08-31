@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Reservoom.Exceptions;
 using Reservoom.Models;
 using Reservoom.Services;
@@ -16,7 +17,7 @@ using System.Windows.Input;
 
 namespace Reservoom.ViewModels
 {
-    public partial class MakeReservationViewModel : ObservableObject, INotifyDataErrorInfo
+    public partial class MakeReservationViewModel : ObservableRecipient, INotifyDataErrorInfo
     {
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCreateReservation))]

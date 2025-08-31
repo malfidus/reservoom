@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Reservoom.ViewModels
 {
-    public class ReservationViewModel : ObservableObject
+    public partial class ReservationViewModel : ObservableObject
     {
         private readonly Reservation _reservation;
 

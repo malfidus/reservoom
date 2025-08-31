@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Reservoom.Models;
 using Reservoom.Services;
 using Reservoom.Stores;
@@ -14,7 +15,7 @@ using System.Windows.Input;
 
 namespace Reservoom.ViewModels
 {
-    public partial class ReservationListingViewModel : ObservableObject
+    public partial class ReservationListingViewModel : ObservableRecipient, IRecipient<ReservationMadeMessage> //IRecip automatically registers and deregisters the ViewModel with the Messenger when the IsActive property changes
     {
         private readonly HotelStore _hotelStore;
         private readonly NavigationService<MakeReservationViewModel> _makeReservationNavigationService;
@@ -65,19 +66,26 @@ namespace Reservoom.ViewModels
             _makeReservationNavigationService = makeReservationNavigationService;
             _reservations = new ObservableCollection<ReservationViewModel>();
 
-            _hotelStore.ReservationMade += OnReservationMode;
             _reservations.CollectionChanged += OnReservationsChanged;
         }
 
-        public void Dispose()
+        protected override void OnActivated()
         {
-            _hotelStore.ReservationMade -= OnReservationMode;
-            //base.Dispose();
+            StrongReferenceMessenger.Default.RegisterAll(this);
+
+            base.OnActivated();
         }
 
-        private void OnReservationMode(Reservation reservation)
+        protected override void OnDeactivated()
         {
-            ReservationViewModel reservationViewModel = new ReservationViewModel(reservation);
+            StrongReferenceMessenger.Default.UnregisterAll(this);
+
+            base.OnDeactivated();
+        }
+
+        public void Receive(ReservationMadeMessage message)
+        {
+            ReservationViewModel reservationViewModel = new ReservationViewModel(message.Value);
             _reservations.Add(reservationViewModel);
         }
 

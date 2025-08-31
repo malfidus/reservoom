@@ -10,14 +10,24 @@ namespace Reservoom.Stores
 {
     public class NavigationStore
     {
-        private ObservableObject _currentViewModel;
-        public ObservableObject CurrentViewModel
+        private ObservableRecipient _currentViewModel;  //We can use Recipient instead of Object because it is likely that all page ViewModels will inherit from ObservableRecipient
+        public ObservableRecipient CurrentViewModel
         {
             get => _currentViewModel;
             set
             {
-                //_currentViewModel?.Dispose();
+                if (_currentViewModel != null)
+                {
+                    _currentViewModel.IsActive = false; // Deactivate the previous ViewModel
+                }
+
                 _currentViewModel = value;
+
+                if (_currentViewModel != null)
+                {
+                    _currentViewModel.IsActive = true; // Activate the new ViewModel
+                }
+
                 OnCurrentViewModelChanged();
             }
         }
